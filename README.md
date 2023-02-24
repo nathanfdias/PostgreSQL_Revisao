@@ -357,3 +357,58 @@ GROUP BY 1
     FROM funcionarios
     GROUP BY nome
     HAVING COUNT(id) = 1;
+
+CREATE TEMPORARY TABLE a(
+	coluna1 VARCHAR(255) NOT NULL CHECK(coluna1 <> ''),
+	coluna2 VARCHAR(255) NOT NULL,
+	UNIQUE (coluna1, coluna2)
+);
+
+INSERT INTO a VALUES('a', 'c');
+
+SELECT * FROM a;
+
+ALTER TABLE a RENAME TO teste;
+SELECT * FROM teste;
+
+ALTER TABLE teste RENAME coluna1 TO primeira_coluna
+ALTER TABLE teste RENAME coluna2 TO segunda_coluna
+
+-- Bom costume, antes de usar DELETE ou UPDATE,
+-- usar SELECT para ter certeza do que será excluido
+
+--OBS: Comandos sql funcionam sobre atomicidade:
+-- caso de erro reverte o que foi mudadado
+
+-- Controlando Transações
+--START TRANSACTION ou BEGIN: inicia o checkpoint
+-- DELETE FROM aluno;
+-- Salvar: COMMIT
+-- Voltar Checkpoint: ROLLBACK
+
+CREATE SEQUENCE minha_sequence
+
+SELECT NEXTVAL('minha_sequence')
+SELECT CURRVAL('minha_sequence')
+
+CREATE TABLE auto(
+	id INTEGER PRIMARY KEY DEFAULT NEXTVAL('minha_sequence'),
+	nome VARCHAR(30) NOT NULL
+);
+
+INSERT INTO auto (nome) VALUES ('Vinicius Dias')
+INSERT INTO auto(id, nome) VALUES (2, 'Vinicius Dias')
+
+SELECT * FROM auto;
+
+CREATE TYPE CLASSIFICACAO AS ENUM ('LIVRE', '18_ANOS');
+
+CREATE TABLE filme(
+	id SERIAL PRIMARY KEY,
+	nome VARCHAR(255) NOT NULL,
+	--classificacao VARCHAR(255)CHECK (classificacao IN ('LIVRE', '18_ANOS'))
+	--classificacao ENUM ('LIVRE', '18_ANOS')
+	classificacao CLASSIFICACAO
+);
+
+INSERT INTO filme(nome, classificacao) VALUES ('Um filme qualquer', 'LIVRE')
