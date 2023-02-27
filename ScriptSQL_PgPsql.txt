@@ -1,0 +1,170 @@
+-- Estrutura PL/pgSQL
+
+create or replace function primeira_pl() returns integer as $$
+	begin 
+		return 1;
+	end
+	
+$$ language plpgsql;
+
+select primeira_pl();
+
+-- Declaracao de Variavel 
+
+create or replace function segunda_pl() returns integer as $$
+	declare 
+		primeira_variavel integer := 3; -- Default = ":="
+	begin 
+		primeira_variavel = primeira_variavel * 2;
+		return primeira_variavel;
+	end
+	
+$$ language plpgsql;
+
+select segunda_pl();
+
+-- Condicionais
+
+CREATE OR REPLACE FUNCTION salario_ok(instrutor instrutor) RETURNS varchar AS $$
+BEGIN
+IF instrutor.salario > 200 THEN
+RETURN 'Salario está ok';
+ELSE
+RETURN 'Salario pode aumentar';
+END IF;
+END;
+$$ language plpgsql;
+
+select nome, salario_ok(instrutor) from instrutor;
+
+/*
+  ELSEIF 
+  
+  CASE	
+	WHEN condicional
+		return ----  
+	WHEN condicional
+		return ----
+   END CASE
+ */
+
+-- Return Next
+
+create or replace function tabuada(numero integer) returns setof 
+integer as $$
+	declare 
+	begin 
+		return next numero * 1;
+		return next numero * 2;
+		return next numero * 3;
+		return next numero * 4;
+		return next numero * 5;
+	end
+$$ language plpgsql;
+
+select tabuada(2);
+
+-- Loop
+
+create or replace function tabloop(numero integer) returns setof integer as $$
+ declare 
+ 	 multiplicador integer default 1;
+ begin
+ 	loop
+	 	return next numero * multiplicador;
+	 	multiplicador := multiplicador + 1;
+	 
+	 	exit when multiplicador = 10;
+ 	end loop;
+ 	
+ end;
+ $$ language plpgsql;
+
+-- While
+
+create or replace function tabloop(numero integer) returns setof integer as $$
+ declare 
+ 	 multiplicador integer default 1;
+ begin
+ 	while multiplicador < 10 loop
+	 	return next numero * multiplicador;
+	 	multiplicador := multiplicador + 1;
+ 	end loop;
+ 	
+ end;
+ $$ language plpgsql;
+
+select tabloop(3);
+
+-- FOR
+
+create or replace function tabfor(numero integer) returns setof text as $$
+ begin
+ 	for multiplicador in 1..9 loop
+	 	return next numero || ' x ' || multiplicador || ' = ' || numero * multiplicador;
+ 	end loop;
+ 	
+ end;
+ $$ language plpgsql;
+
+select tabfor(2);
+
+-- Exemplo:
+
+DROP TABLE IF EXISTS instrutor CASCADE;
+CREATE TABLE instrutor(
+    id SERIAL PRIMARY KEY,
+    nome VARCHAR(255) NOT NULL,
+    salario DECIMAL(10, 2)
+);
+
+DROP TABLE IF EXISTS log_instrutores;
+CREATE TABLE log_instrutores(
+    id SERIAL PRIMARY KEY,
+    informacao VARCHAR(255),
+    momento_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- CURRENT_TIMESTAMP retorna a data e a hora de agora.
+);
+
+DROP FUNCTION IF EXISTS cria_instrutor(VARCHAR, DECIMAL);
+CREATE FUNCTION cria_instrutor(nome_instrutor VARCHAR, salario_instrutor DECIMAL) RETURNS VOID AS $$
+    DECLARE
+        id_instrutor_inserido INTEGER;
+        media_salarial DECIMAL;
+        instrutores_recebem_menos INTEGER DEFAULT 0;
+        total_instrutores INTEGER DEFAULT 0;
+        salario DECIMAL;
+        percentual DECIMAL;
+    BEGIN
+        INSERT INTO instrutor (nome, salario) VALUES (nome_instrutor, salario_instrutor) RETURNING id INTO id_instrutor_inserido;
+
+        SELECT AVG(instrutor.salario) INTO media_salarial FROM instrutor WHERE id <> id_instrutor_inserido;
+
+        IF salario_instrutor > media_salarial THEN
+            INSERT INTO log_instrutores(informacao) VALUES (nome_instrutor || ' recebe acima da média');
+        END IF;
+
+        FOR salario IN SELECT instrutor.salario FROM instrutor WHERE id <> id_instrutor_inserido LOOP
+            total_instrutores := total_instrutores +1;
+            IF salario_instrutor > salario THEN
+                instrutores_recebem_menos := instrutores_recebem_menos + 1;
+            END IF;
+        END LOOP;
+        IF total_instrutores = 0 THEN -- A função não vai funcionar se não houver instrutores cadastrados.
+            INSERT INTO log_instrutores (informacao) VALUES('Primeiro instrutor inserido.');
+        ELSE
+            percentual := instrutores_recebem_menos::DECIMAL / total_instrutores::DECIMAL * 100;
+            INSERT INTO log_instrutores (informacao)
+                VALUES(nome_instrutor || ' recebe mais do que ' || ROUND(percentual,2) || '% dos instrutores.');
+        END IF;
+    END;
+$$ LANGUAGE PLPGSQL;
+
+SELECT cria_instrutor('Xicó', 700);
+SELECT cria_instrutor('Thiago', 10000);
+SELECT cria_instrutor('Zina', 5000);
+SELECT * FROM instrutor;
+SELECT * FROM log_instrutores;
+ 
+
+
+
