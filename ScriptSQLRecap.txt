@@ -1,0 +1,159 @@
+create table aluno (
+	id SERIAL primary key,
+	primeiro_nome VARCHAR(255) not null,
+	ultimo_nome VARCHAR(255) not null,
+	data_nascimento DATE not null
+);
+
+create table curso (
+	id SERIAL primary key,
+	nome VARCHAR(255) not null,
+	categoria_id INTEGER not null references categoria(id)
+);
+
+create table categoria(
+	id SERIAL primary key,
+	nome VARCHAR(255) not null
+);
+
+create table aluno_curso(
+	aluno_id INTEGER not null references aluno(id),
+	curso_id INTEGER not null references curso(id),
+	primary key (aluno_id, curso_id)
+);
+
+INSERT INTO aluno (primeiro_nome, ultimo_nome, data_nascimento) VALUES (
+'Vinicius', 'Dias', '1997-10-15'
+), (
+'Patrícia', 'Freitas', '1996-10-25'
+), (
+'Diogo', 'Oliveira', '1994-08-27'
+), (
+'Maria', 'Rosa', '1985-01-01'
+);
+
+
+INSERT INTO categoria (nome) VALUES ('Front-End'), ('Programação'), ('Banco de dados'), ('Data Science');
+
+INSERT INTO curso (nome, categoria_id) VALUES
+    ('HTML',1),
+    ('CSS',1),
+    ('JS',1),
+    ('PHP',2),
+    ('Java',2),
+    ('C++',2),
+    ('PostgreSQL',3),
+    ('MySQL',3),
+    ('Oracle',3),
+    ('SQL Server',3),
+    ('SQLite',3),
+    ('Pandas',4),
+    ('Machine Learning',4),
+    ('Power BI',4);
+
+   
+INSERT INTO aluno_curso VALUES (1,4), (1,11), (2,1), (2,2), (3,4), (3,3),(4,4),(4,6),(4,5);
+
+select * from categoria where id = 4;
+
+update categoria set nome = 'Ciência de Dados' where id = 4;
+
+SELECT *
+    FROM aluno
+    JOIN aluno_curso ON aluno_curso.aluno_id = aluno.id;
+   
+SELECT *
+    FROM aluno
+    JOIN aluno_curso ON aluno_curso.aluno_id = aluno.id
+    JOIN curso ON curso.id = aluno_curso.curso_id;
+   
+SELECT aluno.primeiro_nome,
+       aluno.ultimo_nome,
+       COUNT(curso.id) as numero_cursos
+    FROM aluno
+    JOIN aluno_curso ON aluno_curso.aluno_id = aluno.id
+    JOIN curso ON curso.id = aluno_curso.curso_id
+    group by 1,2
+    order by numero_cursos DESC;
+   
+SELECT aluno.primeiro_nome,
+       aluno.ultimo_nome,
+       COUNT(aluno_curso.curso_id) numero_cursos
+    FROM aluno
+    JOIN aluno_curso ON aluno_curso.aluno_id = aluno.id
+GROUP BY 1,2
+ORDER BY numero_cursos desc
+limit 1;
+
+-- Operador IN comparador
+
+select * from curso where categoria_id = 1 or categoria_id = 2;
+select * from curso where categoria_id in(1,2);
+
+select id from categoria where nome not like '% %';
+
+-- SubQueries
+
+select curso.nome from curso where categoria_id in (
+	select id from categoria where nome not like '% %'
+);
+
+select curso.nome from curso where categoria_id in (
+	select id from categoria where nome like '% de %'
+);
+
+SELECT categoria.nome AS categoria,
+        COUNT(curso.id) as numero_cursos
+    FROM categoria
+    JOIN curso ON curso.categoria_id = categoria.id
+GROUP BY categoria;
+
+
+SELECT categoria,
+       numero_cursos
+    FROM (
+            SELECT categoria.nome AS categoria,
+                COUNT(curso.id) as numero_cursos
+            FROM categoria
+            JOIN curso ON curso.categoria_id = categoria.id
+        GROUP BY categoria
+    ) AS categoria_cursos
+  WHERE numero_cursos > 3;
+ 
+select * from aluno;
+
+--Funções
+
+select (primeiro_nome || ' ' ||ultimo_nome) as nome_completo from aluno;
+select concat(primeiro_nome || ' ' ||ultimo_nome) as nome_completo from aluno;
+select upper(concat(primeiro_nome || ' ' ||ultimo_nome)) as nome_completo from aluno;
+select trim(upper(concat(primeiro_nome || ' ' ||ultimo_nome))) as nome_completo from aluno;
+
+SELECT (primeiro_nome || ultimo_nome) AS nome_completo, NOW(), data_nascimento FROM aluno;
+
+SELECT (primeiro_nome || ultimo_nome) AS nome_completo,
+    (NOW()::DATE - data_nascimento)/365 AS idade
+  FROM aluno;
+ 
+SELECT (primeiro_nome || ultimo_nome) AS nome_completo,
+    EXTRACT(YEAR FROM AGE(data_nascimento)) AS idade
+  FROM aluno;
+
+-- Funções Matemáticas : Acessar lib
+ 
+select pi();
+
+select now();
+select to_char(now(), 'DD/MM/YYYY'); 
+
+-- Criando Views
+
+CREATE VIEW vw_cursos_por_categoria
+    AS SELECT categoria.nome AS categoria,
+       COUNT(curso.id) as numero_cursos
+   FROM categoria
+   JOIN curso ON curso.categoria_id = categoria.id
+GROUP BY categoria;
+
+CREATE VIEW vw_cursos_programacao AS SELECT nome FROM curso WHERE categoria_id = 2;
+
