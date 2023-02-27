@@ -1,0 +1,95 @@
+CREATE FUNCTION primeira_funcao()
+RETURNS integer AS $$
+SELECT (5-3) * 2;
+$$ LANGUAGE SQL;
+
+
+select primeira_funcao() as numero;
+
+CREATE FUNCTION soma_dois_numeros(num1 integer, num2 integer) 
+RETURNS integer AS $$
+SELECT num1 + num2;
+$$ LANGUAGE SQL;
+	
+select soma_dois_numeros(2,3);
+
+drop function soma_dois_numeros;
+
+CREATE FUNCTION soma_dois_numeros(integer, integer) 
+RETURNS integer AS $$
+SELECT $1 + $2;
+$$ LANGUAGE SQL;
+	
+select soma_dois_numeros(2,3);
+
+create table a(nome varchar(255) not null);
+
+create or replace function cria_a(nome varchar) returns varchar as $$
+insert into a (nome) values(cria_a.nome);
+select nome;
+$$ language sql;
+
+select cria_a('Vinicius Dias');
+
+-- Parametros Compostos
+
+create table instrutor(
+	id serial primary key,
+	nome varchar(255) not null,
+	salario decimal(10,2)
+);
+
+insert into instrutor(nome, salario) values('Vini Vinchenzo', 100);
+insert into instrutor(nome, salario) values('Diogo Mascarenhas', 300);
+insert into instrutor(nome, salario) values('Juliana', 400);
+insert into instrutor(nome, salario) values('Nico Steppat', 700);
+
+
+create function dobro_do_salario(instrutor) returns decimal as $$
+	select $1.salario * 2 as dobro;
+$$ language sql;
+
+select nome, dobro_do_salario(instrutor.*)as desejo from instrutor;
+
+-- Retorno Compostos
+
+create or replace function cria_instrutor_falso() returns instrutor as $$
+	select 22 as id, 'nome falso' as nome, 200::decimal as salario;
+$$ language sql;
+
+select * from cria_instrutor_falso();
+
+-- Retorno Conjuntos
+
+drop function instrutores_bem_pagos;
+
+create or replace function instrutores_bem_pagos(valor_salario decimal)
+returns setof instrutor as $$
+select * from instrutor where salario > valor_salario;
+$$ language sql;
+
+select * from instrutores_bem_pagos(300);
+
+select * from instrutor;
+
+-- Parâmetros de saída
+
+create type dois_valores as (soma integer, produto integer);
+
+drop function soma_e_produto 
+
+-- Sem type returns
+
+create function soma_e_produto (num1 integer, num2 integer, out soma integer, out produto integer)
+as $$
+select num1 + num2 as soma, num1 * num2 as produto;
+$$ language sql;
+
+-- Com type returns
+
+create function soma_e_produto (num1 integer, num2 integer)
+returns dois_valores as $$
+select num1 + num2 as soma, num1 * num2 as produto;
+$$ language sql;
+
+select * from soma_e_produto(3, 3);
